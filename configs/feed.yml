@@ -1,0 +1,6 @@
+app:
+  host: "localhost"
+  port: "8081"
+
+web:
+  origin: "http://localhost:5173"

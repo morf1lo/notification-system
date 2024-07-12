@@ -1,0 +1,2 @@
+userService:
+  target: "localhost:8080"

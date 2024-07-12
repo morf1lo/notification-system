@@ -1,0 +1,3 @@
+app:
+  network: "tcp"
+  addr: ":8080"

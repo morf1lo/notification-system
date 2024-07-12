@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package proto;
+
+option go_package = "github.com/morf1lo/notification-system/internal/user/pb";
+
+message Empty {}
+
+message Subscriber {
+  int64 id = 1;
+  string email = 2;
+}
+
+message SubscribeReq {
+  string email = 1;
+}
+
+message GetAllSubscribersRes {
+  repeated Subscriber subs = 1;
+}
+
+service User {
+  rpc Subscribe(SubscribeReq) returns (Empty) {}
+  rpc GetAllSubscribers(Empty) returns (GetAllSubscribersRes) {}
+}
