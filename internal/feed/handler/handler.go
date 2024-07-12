@@ -28,6 +28,7 @@ func (h *Handler) InitRoutes() *gin.Engine {
 		feed := api.Group("/feed")
 		{
 			feed.POST("/publish", h.mwAdmin, h.feedPublish)
+			feed.GET("/:id", h.feedFindByID)
 		}
 	}
 
