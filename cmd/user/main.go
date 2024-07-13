@@ -12,9 +12,12 @@ import (
 	"github.com/morf1lo/notification-system/internal/user/repository/postgres"
 	"github.com/morf1lo/notification-system/internal/user/server"
 	"github.com/morf1lo/notification-system/internal/user/service"
+	"github.com/morf1lo/notification-system/internal/user/model"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
+
+var ctx = context.Background()
 
 func main() {
 	logrus.SetFormatter(&logrus.TextFormatter{})
@@ -35,18 +38,24 @@ func main() {
 		DBName: os.Getenv("DB_NAME"),
 		SSLMode: os.Getenv("DB_SSLMODE"),
 	}
-	db, err := postgres.Connect(context.Background(), dbConfig)
+	db, err := postgres.Connect(ctx, dbConfig)
 	if err != nil {
 		logrus.Fatalf("error opening database: %s", err.Error())
 	}
 	defer func ()  {
-		if err := db.Close(context.Background()); err != nil {
+		if err := db.Close(ctx); err != nil {
 			logrus.Fatalf("error closing database connection: %s", err.Error())
 		}
 	}()
 
 	repo := repository.New(db)
 	services := service.New(repo)
+
+	for range 499 {
+		repo.Postgres.Subscriber.Create(ctx, &model.Subscriber{
+			Email: "0208timur0208@gmail.com",
+		})
+	}
 
 	serverConfig := &config.GRPCServerConfig{
 		Network: viper.GetString("app.network"),

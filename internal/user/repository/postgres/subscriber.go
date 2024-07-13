@@ -45,13 +45,19 @@ func (r *SubscriberRepo) ExistsByEmail(ctx context.Context, email string) bool {
 	return exists
 }
 
+func (r *SubscriberRepo) GetCountOfSubscribers(ctx context.Context) int {
+	var count int
+	r.db.QueryRow(ctx, "select count(*) from subscribers").Scan(&count)
+	return count
+}
+
 func (r *SubscriberRepo) FindAll(ctx context.Context) ([]*pb.Subscriber, error) {
 	var count int64
 	if err := r.db.QueryRow(ctx, "select count(s.id) from subscribers s").Scan(&count); err != nil {
 		return nil, err
 	}
 
-	const batchSize = 10000
+	const batchSize = 100
 	var subs []*pb.Subscriber
 	var maxID int64
 

@@ -13,6 +13,7 @@ type Subscriber interface {
 	FindByID(ctx context.Context, id int64) (*model.Subscriber, error)
 	FindByEmail(ctx context.Context, email string) (*model.Subscriber, error)
 	ExistsByEmail(ctx context.Context, email string) bool
+	GetCountOfSubscribers(ctx context.Context) int
 	FindAll(ctx context.Context) ([]*pb.Subscriber, error)
 }
 

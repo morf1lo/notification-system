@@ -16,9 +16,16 @@ func NewUserService(repo *repository.Repository) *UserService {
 	return &UserService{repo: repo}
 }
 
+const maxSubsCount = 500
+
 func (s *UserService) Subscribe(ctx context.Context, sub *model.Subscriber) error {
 	if err := sub.Validate(); err != nil {
 		return err
+	}
+
+	count := s.repo.Postgres.Subscriber.GetCountOfSubscribers(ctx)
+	if count >= maxSubsCount {
+		return errMaxSubscribersCountReached
 	}
 
 	if s.repo.Postgres.Subscriber.ExistsByEmail(ctx, sub.Email) {
