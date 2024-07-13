@@ -24,6 +24,10 @@ func NewFeedService(repo *repository.Repository, rabbitMQ *mq.MQConn) *FeedServi
 }
 
 func (s *FeedService) Publish(ctx context.Context, article *model.Article) error {
+	if err := s.checkCooldown(ctx); err != nil {
+		return err
+	}
+
 	if err := s.repo.Postgres.Article.Create(ctx, article); err != nil {
 		return err
 	}
@@ -36,8 +40,32 @@ func (s *FeedService) Publish(ctx context.Context, article *model.Article) error
 	return s.rabbitMQ.Publish(articleEmailNotificationMQ, articleJSON)
 }
 
+func (s *FeedService) checkCooldown(ctx context.Context) error {
+	cooldown := s.repo.Redis.Cooldown.Get(ctx, articlesCooldownPrefix)
+	n, err := cooldown.Int()
+	if err != nil && err != redis.Nil {
+		return err
+	}
+
+	if n >= 2 {
+		return errMaxArticlesReached
+	}
+
+	if err := s.repo.Redis.Cooldown.Increment(ctx, articlesCooldownPrefix); err != nil {
+		return err
+	}
+
+	if n == 0 {
+		if err := s.repo.Redis.Cooldown.SetExpiration(ctx, articlesCooldownPrefix, time.Hour * 24 * 7); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (s *FeedService) FindByID(ctx context.Context, id int64) (*model.Article, error) {
-	article, err := s.repo.Redis.Article.Find(ctx, ArticlePrefix(id))
+	article, err := s.repo.Redis.Article.Get(ctx, ArticlePrefix(id))
 	if err == nil {
 		return article, nil
 	}

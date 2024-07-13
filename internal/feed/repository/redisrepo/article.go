@@ -21,7 +21,7 @@ func (r *ArticleRepo) Create(ctx context.Context, key string, value []byte, expi
 	return r.rdb.Set(ctx, key, value, expiration).Err()
 }
 
-func (r *ArticleRepo) Find(ctx context.Context, key string) (*model.Article, error) {
+func (r *ArticleRepo) Get(ctx context.Context, key string) (*model.Article, error) {
 	article, err := r.rdb.Get(ctx, key).Result()
 	if err != nil {
 		return nil, err
