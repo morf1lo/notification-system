@@ -12,7 +12,6 @@ import (
 	"github.com/morf1lo/notification-system/internal/user/repository/postgres"
 	"github.com/morf1lo/notification-system/internal/user/server"
 	"github.com/morf1lo/notification-system/internal/user/service"
-	"github.com/morf1lo/notification-system/internal/user/model"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
@@ -50,12 +49,6 @@ func main() {
 
 	repo := repository.New(db)
 	services := service.New(repo)
-
-	for range 499 {
-		repo.Postgres.Subscriber.Create(ctx, &model.Subscriber{
-			Email: "0208timur0208@gmail.com",
-		})
-	}
 
 	serverConfig := &config.GRPCServerConfig{
 		Network: viper.GetString("app.network"),
