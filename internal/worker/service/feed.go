@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"sync"
+	"time"
 
 	"github.com/morf1lo/notification-system/internal/user/pb"
 	"github.com/morf1lo/notification-system/internal/worker/model"
@@ -14,14 +15,18 @@ import (
 type FeedService struct {
 	userService pb.UserClient
 	rabbitMQ *mq.MQConn
+	mailer Mailer
 }
 
-func NewFeedService(userService pb.UserClient, rabbitMQ *mq.MQConn) *FeedService {
+func NewFeedService(userService pb.UserClient, rabbitMQ *mq.MQConn, mailer Mailer) *FeedService {
 	return &FeedService{
 		userService: userService,
 		rabbitMQ: rabbitMQ,
+		mailer: mailer,
 	}
 }
+
+const maxRetries = 10
 
 func (s *FeedService) ProcessFeeds(ctx context.Context) {
 	msgs, err := s.rabbitMQ.Consume(articleEmailNotificationMQ)
@@ -53,7 +58,7 @@ func (s *FeedService) ProcessFeeds(ctx context.Context) {
 				wg.Add(1)
 				go func(sub *pb.Subscriber)  {
 					defer wg.Done()
-					if err := sendMail(sub.GetEmail(), &message); err != nil {
+					if err := s.sendMail(sub.GetEmail(), &message); err != nil {
 						logrus.Errorf("error sending email to %s: %s", sub.GetEmail(), err.Error())
 					}
 				}(sub)
@@ -71,7 +76,19 @@ func (s *FeedService) ProcessFeeds(ctx context.Context) {
 	<-forever
 }
 
-func sendMail(to string, article *model.Article) error {
-	// TODO: send mail functional
+func (s *FeedService) sendMail(to string, message *model.Article) error {
+	var retryCount int
+
+	for retryCount < maxRetries {
+		err := s.mailer.Send(to, message)
+		if err == nil {
+			return nil
+		}
+
+		logrus.Errorf("failed send email to %s: %s", to, err.Error())
+		retryCount++
+		time.Sleep(time.Second * time.Duration(retryCount))
+	}
+
 	return nil
 }
